@@ -1,26 +1,29 @@
 ---
-title: "Week 1"
+title: "Week 1: Wrangling with nycflights13"
 format: html
-editor: visual
 ---
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+## Setup
 
 ```{r}
-1 + 1
+library(tidyverse)
+library(nycflights13)
 ```
 
-You can add options to executable code like this
+## Part 1: Average departure delay by airline
 
 ```{r}
-#| echo: false
-2 * 2
+delays_by_airline <- flights |>
+  group_by(carrier) |>
+  summarise(
+    n_flights = n(),
+    avg_dep_delay = mean(dep_delay, na.rm = TRUE)
+  ) |>
+  arrange(desc(avg_dep_delay))
+
+delays_by_airline
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+Which airlines had the worst departure delays?
+
+Airline F9 had the worst average departure delay at 20.22 minutes
