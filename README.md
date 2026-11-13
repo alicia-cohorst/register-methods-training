@@ -1,4 +1,4 @@
-Indepented register methods training
+Independent register methods training
 # register-methods-training
 
 <!-- badges: start -->
