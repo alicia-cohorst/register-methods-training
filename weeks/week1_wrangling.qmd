@@ -220,4 +220,89 @@ R² = 0.0024 means airport explains about **0.24%** of the variation in departur
 
 Most flights leave close to on time, so the median is often **below zero** (early) or only a few minutes late, while the mean is pulled higher by the long delays. That’s why the mean and median differ, and it’s the reason Exercise 3 asked you to compare them.
 
-### 
+## Plane-age plot and the check within airlines
+
+#### Step 1: Plot plane age against delay
+
+```{r}
+age_delay <- flights_planes |>
+  filter(!is.na(plane_age), !is.na(dep_delay)) |>
+  group_by(plane_age) |>
+  summarise(
+    avg_dep_delay_min = mean(dep_delay),
+    n_flights = n()
+  ) |>
+  filter(n_flights >= 100)
+
+ggplot(age_delay, aes(x = plane_age, y = avg_dep_delay_min)) +
+  geom_point() +
+  geom_smooth()
+```
+
+- `filter(!is.na(...))` removes rows with missing values. The `!` means “not”, so this reads “keep rows where plane_age is not missing.”
+
+- `filter(n_flights >= 100)` drops ages with very few flights, because averages from tiny groups are noisy and would scatter the dots.
+
+- `geom_point()` draws the dots and `geom_smooth()` draws a trend line through them.
+
+- In `aes(x = ..., y = ...)`, `x` is the horizontal axis and `y` is the vertical axis. To plot something else, change those column names.
+
+#### Step 2: Check whether airline is hiding something
+
+```{r}
+flights_planes |>
+  filter(!is.na(plane_age), !is.na(dep_delay)) |>
+  mutate(age_group = cut(plane_age,
+                         breaks = c(-Inf, 5, 10, 20, Inf),
+                         labels = c("0-5", "6-10", "11-20", "21+"))) |>
+  group_by(origin, age_group) |>
+  summarise(
+    avg_dep_delay_min = mean(dep_delay),
+    n_flights = n(),
+    .groups = "drop"
+  ) |>
+  filter(n_flights >= 100)
+```
+
+- `cut()` sorts plane ages into bands: 0-5 years, 6-10, and so on. `Inf` means infinity, so `-Inf` to 5 covers everything up to 5.
+
+- `group_by(carrier, age_group)` makes one group for each combination of airline and age band.
+
+- The final `filter(n_flights >= 100)` skips combinations with too few flights to trust.
+
+#### Is the airline linked to both variables?
+
+```{r}
+flights_planes |>
+  filter(!is.na(plane_age), !is.na(dep_delay)) |>
+  group_by(carrier) |>
+  summarise(
+    n_flights = n(),
+    mean_plane_age = mean(plane_age),
+    avg_dep_delay_min = mean(dep_delay)
+  )
+
+```
+
+#### Does adjusting for airline change the estimate?
+
+```{r}
+crude    <- lm(dep_delay ~ plane_age, data = flights_planes)
+adjusted <- lm(dep_delay ~ plane_age + carrier, data = flights_planes)
+
+coef(crude)["plane_age"]
+coef(adjusted)["plane_age"]
+```
+
+- Crude (-0.097): ignoring airline, older planes have slightly shorter delays.
+
+- Adjusted (+0.082): comparing planes within the same airline, older planes have slightly longer delays.
+
+#### **Does the relationship differ by airline?** (effect modification)
+
+```{r}
+interaction_model <- lm(dep_delay ~ plane_age * carrier, data = flights_planes)
+anova(adjusted, interaction_model)
+```
+
+Airline confounded the plane-age and delay relationship: airlines differed in both fleet age and average delay, and adjusting for carrier reversed the coefficient from -0.097 to +0.082.

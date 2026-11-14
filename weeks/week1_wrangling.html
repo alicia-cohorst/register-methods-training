@@ -446,8 +446,155 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 <h3 class="anchored" data-anchor-id="why-the-medians-may-look-odd">Why the medians may look odd</h3>
 <p>Most flights leave close to on time, so the median is often <strong>below zero</strong> (early) or only a few minutes late, while the mean is pulled higher by the long delays. That’s why the mean and median differ, and it’s the reason Exercise 3 asked you to compare them.</p>
 </section>
-<section id="section" class="level3">
-<h3 class="anchored" data-anchor-id="section"></h3>
+</section>
+<section id="plane-age-plot-and-the-check-within-airlines" class="level2">
+<h2 class="anchored" data-anchor-id="plane-age-plot-and-the-check-within-airlines">Plane-age plot and the check within airlines</h2>
+<section id="step-1-plot-plane-age-against-delay" class="level4">
+<h4 class="anchored" data-anchor-id="step-1-plot-plane-age-against-delay">Step 1: Plot plane age against delay</h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>age_delay <span class="ot">&lt;-</span> flights_planes <span class="sc">|&gt;</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(plane_age), <span class="sc">!</span><span class="fu">is.na</span>(dep_delay)) <span class="sc">|&gt;</span></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(plane_age) <span class="sc">|&gt;</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_dep_delay_min =</span> <span class="fu">mean</span>(dep_delay),</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_flights =</span> <span class="fu">n</span>()</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(n_flights <span class="sc">&gt;=</span> <span class="dv">100</span>)</span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(age_delay, <span class="fu">aes</span>(<span class="at">x =</span> plane_age, <span class="at">y =</span> avg_dep_delay_min)) <span class="sc">+</span></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'loess' and formula = 'y ~ x'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="week1_wrangling_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><p><code>filter(!is.na(...))</code> removes rows with missing values. The <code>!</code> means “not”, so this reads “keep rows where plane_age is not missing.”</p></li>
+<li><p><code>filter(n_flights &gt;= 100)</code> drops ages with very few flights, because averages from tiny groups are noisy and would scatter the dots.</p></li>
+<li><p><code>geom_point()</code> draws the dots and <code>geom_smooth()</code> draws a trend line through them.</p></li>
+<li><p>In <code>aes(x = ..., y = ...)</code>, <code>x</code> is the horizontal axis and <code>y</code> is the vertical axis. To plot something else, change those column names.</p></li>
+</ul>
+</section>
+<section id="step-2-check-whether-airline-is-hiding-something" class="level4">
+<h4 class="anchored" data-anchor-id="step-2-check-whether-airline-is-hiding-something">Step 2: Check whether airline is hiding something</h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>flights_planes <span class="sc">|&gt;</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(plane_age), <span class="sc">!</span><span class="fu">is.na</span>(dep_delay)) <span class="sc">|&gt;</span></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age_group =</span> <span class="fu">cut</span>(plane_age,</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">breaks =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">20</span>, <span class="cn">Inf</span>),</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"0-5"</span>, <span class="st">"6-10"</span>, <span class="st">"11-20"</span>, <span class="st">"21+"</span>))) <span class="sc">|&gt;</span></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(origin, age_group) <span class="sc">|&gt;</span></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_dep_delay_min =</span> <span class="fu">mean</span>(dep_delay),</span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_flights =</span> <span class="fu">n</span>(),</span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(n_flights <span class="sc">&gt;=</span> <span class="dv">100</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 12 × 4
+   origin age_group avg_dep_delay_min n_flights
+   &lt;chr&gt;  &lt;fct&gt;                 &lt;dbl&gt;     &lt;int&gt;
+ 1 EWR    0-5                   11.2      15414
+ 2 EWR    6-10                  16.9      23260
+ 3 EWR    11-20                 15.7      66229
+ 4 EWR    21+                   14.0       5080
+ 5 JFK    0-5                   13.1      23270
+ 6 JFK    6-10                  14.3      31888
+ 7 JFK    11-20                  9.90     25774
+ 8 JFK    21+                    9.96     11639
+ 9 LGA    0-5                    8.99      7338
+10 LGA    6-10                  13.3      17180
+11 LGA    11-20                 11.3      30656
+12 LGA    21+                   10.1      17068</code></pre>
+</div>
+</div>
+<ul>
+<li><p><code>cut()</code> sorts plane ages into bands: 0-5 years, 6-10, and so on. <code>Inf</code> means infinity, so <code>-Inf</code> to 5 covers everything up to 5.</p></li>
+<li><p><code>group_by(carrier, age_group)</code> makes one group for each combination of airline and age band.</p></li>
+<li><p>The final <code>filter(n_flights &gt;= 100)</code> skips combinations with too few flights to trust.</p></li>
+</ul>
+</section>
+<section id="is-the-airline-linked-to-both-variables" class="level4">
+<h4 class="anchored" data-anchor-id="is-the-airline-linked-to-both-variables">Is the airline linked to both variables?</h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>flights_planes <span class="sc">|&gt;</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(plane_age), <span class="sc">!</span><span class="fu">is.na</span>(dep_delay)) <span class="sc">|&gt;</span></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(carrier) <span class="sc">|&gt;</span></span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_flights =</span> <span class="fu">n</span>(),</span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_plane_age =</span> <span class="fu">mean</span>(plane_age),</span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_dep_delay_min =</span> <span class="fu">mean</span>(dep_delay)</span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 16 × 4
+   carrier n_flights mean_plane_age avg_dep_delay_min
+   &lt;chr&gt;       &lt;int&gt;          &lt;dbl&gt;             &lt;dbl&gt;
+ 1 9E          17377           7.10             16.7 
+ 2 AA           9787          25.9               9.92
+ 3 AS            708           3.34              5.87
+ 4 B6          52502           6.69             13.0 
+ 5 DL          47130          16.4               9.24
+ 6 EV          49836          11.3              19.9 
+ 7 F9            635           4.88             20.1 
+ 8 FL           2912          11.4              18.2 
+ 9 HA            310           1.55              4.94
+10 MQ            945          35.3               8.24
+11 OO             29           6.86             12.6 
+12 UA          56117          13.2              12.1 
+13 US          19110           9.10              3.81
+14 VX           5035           4.47             13.0 
+15 WN          11823           9.13             17.8 
+16 YV            540           9.30             19.1 </code></pre>
+</div>
+</div>
+</section>
+<section id="does-adjusting-for-airline-change-the-estimate" class="level4">
+<h4 class="anchored" data-anchor-id="does-adjusting-for-airline-change-the-estimate">Does adjusting for airline change the estimate?</h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>crude    <span class="ot">&lt;-</span> <span class="fu">lm</span>(dep_delay <span class="sc">~</span> plane_age, <span class="at">data =</span> flights_planes)</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>adjusted <span class="ot">&lt;-</span> <span class="fu">lm</span>(dep_delay <span class="sc">~</span> plane_age <span class="sc">+</span> carrier, <span class="at">data =</span> flights_planes)</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(crude)[<span class="st">"plane_age"</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  plane_age 
+-0.09728597 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(adjusted)[<span class="st">"plane_age"</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> plane_age 
+0.08215761 </code></pre>
+</div>
+</div>
+<ul>
+<li><p>Crude (-0.097): ignoring airline, older planes have slightly shorter delays.</p></li>
+<li><p>Adjusted (+0.082): comparing planes within the same airline, older planes have slightly longer delays.</p></li>
+</ul>
+</section>
+<section id="does-the-relationship-differ-by-airline-effect-modification" class="level4">
+<h4 class="anchored" data-anchor-id="does-the-relationship-differ-by-airline-effect-modification"><strong>Does the relationship differ by airline?</strong> (effect modification)</h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>interaction_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(dep_delay <span class="sc">~</span> plane_age <span class="sc">*</span> carrier, <span class="at">data =</span> flights_planes)</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(adjusted, interaction_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Analysis of Variance Table
+
+Model 1: dep_delay ~ plane_age + carrier
+Model 2: dep_delay ~ plane_age * carrier
+  Res.Df       RSS Df Sum of Sq      F    Pr(&gt;F)    
+1 274779 446674501                                  
+2 274764 446378439 15    296063 12.149 &lt; 2.2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<p>Airline confounded the plane-age and delay relationship: airlines differed in both fleet age and average delay, and adjusting for carrier reversed the coefficient from -0.097 to +0.082.</p>
 </section>
 </section>
 
