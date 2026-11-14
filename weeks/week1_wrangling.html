@@ -160,6 +160,296 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Which airlines had the worst departure delays?</p>
 <p>Airline F9 had the worst average departure delay at 20.22 minutes</p>
 </section>
+<section id="look-at-the-planes-table" class="level2">
+<h2 class="anchored" data-anchor-id="look-at-the-planes-table">Look at the planes table</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>planes</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3,322 × 9
+   tailnum  year type              manufacturer model engines seats speed engine
+   &lt;chr&gt;   &lt;int&gt; &lt;chr&gt;             &lt;chr&gt;        &lt;chr&gt;   &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt; 
+ 1 N10156   2004 Fixed wing multi… EMBRAER      EMB-…       2    55    NA Turbo…
+ 2 N102UW   1998 Fixed wing multi… AIRBUS INDU… A320…       2   182    NA Turbo…
+ 3 N103US   1999 Fixed wing multi… AIRBUS INDU… A320…       2   182    NA Turbo…
+ 4 N104UW   1999 Fixed wing multi… AIRBUS INDU… A320…       2   182    NA Turbo…
+ 5 N10575   2002 Fixed wing multi… EMBRAER      EMB-…       2    55    NA Turbo…
+ 6 N105UW   1999 Fixed wing multi… AIRBUS INDU… A320…       2   182    NA Turbo…
+ 7 N107US   1999 Fixed wing multi… AIRBUS INDU… A320…       2   182    NA Turbo…
+ 8 N108UW   1999 Fixed wing multi… AIRBUS INDU… A320…       2   182    NA Turbo…
+ 9 N109UW   1999 Fixed wing multi… AIRBUS INDU… A320…       2   182    NA Turbo…
+10 N110UW   1999 Fixed wing multi… AIRBUS INDU… A320…       2   182    NA Turbo…
+# ℹ 3,312 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="join-the-tables" class="level2">
+<h2 class="anchored" data-anchor-id="join-the-tables">Join the tables</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>flights_planes <span class="ot">&lt;-</span> flights <span class="sc">|&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    planes <span class="sc">|&gt;</span> <span class="fu">select</span>(tailnum, <span class="at">year_built =</span> year),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="st">"tailnum"</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<ul>
+<li><p><code>flights |&gt; left_join(...)</code> means “start with flights and add columns to it”.</p></li>
+<li><p><code>planes |&gt; select(tailnum, year_built = year)</code> means “from planes, keep only two columns, and rename <code>year</code> to <code>year_built</code>”. The renaming is what avoids the clash.</p></li>
+<li><p><code>by = "tailnum"</code> means “match the rows using the tailnum column”.</p></li>
+<li><p><code>left_join</code> keeps every flight, even if its plane isn’t found in <code>planes</code>. Those flights just get an <code>NA</code> (missing) in <code>year_built</code>.</p></li>
+</ul>
+</section>
+<section id="calculate-plane-age-and-check-the-join" class="level2">
+<h2 class="anchored" data-anchor-id="calculate-plane-age-and-check-the-join">Calculate plane age and check the join</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>flights_planes <span class="ot">&lt;-</span> flights_planes <span class="sc">|&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">plane_age =</span> <span class="dv">2013</span> <span class="sc">-</span> year_built)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(flights)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 336776</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(flights_planes)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 336776</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(<span class="fu">is.na</span>(flights_planes<span class="sc">$</span>plane_age))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 57912</code></pre>
+</div>
+</div>
+<ul>
+<li><p><code>mutate()</code> creates a new column. Here it’s 2013 (the year of the flights) minus the year the plane was built, which gives the age in years.</p></li>
+<li><p>The first two should print the same number. If a join changes the number of rows, something went wrong.</p></li>
+<li><p>The third counts flights where we don’t know the plane’s age, because those planes weren’t in the <code>planes</code> table. Write down that number in your document, since those flights will have to be left out of the next step.</p></li>
+</ul>
+<p>planes not in the planes table: 57912</p>
+</section>
+<section id="check-the-correlation" class="level2">
+<h2 class="anchored" data-anchor-id="check-the-correlation">Check the correlation</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>flights_planes <span class="sc">|&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">correlation =</span> <span class="fu">cor</span>(plane_age, dep_delay, <span class="at">use =</span> <span class="st">"complete.obs"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 1
+  correlation
+        &lt;dbl&gt;
+1     -0.0154</code></pre>
+</div>
+</div>
+<p><code>cor()</code> gives a number between -1 and 1. Values near 0 mean almost no linear relationship. <code>use = "complete.obs"</code> tells R to ignore rows where either value is missing, which is how we skip the flights with unknown plane age or cancelled flights.</p>
+<p>0.02 × 0.02 = 0.0004, or about 0.04%</p>
+<p>There is a slight correlation (-0.02; 0.04%) between plane age and departure delays, which tells us that there is a negative correlation; newer planes experience greater delays. However, the correlation is very small and indicates almost no linear relationship.</p>
+</section>
+<section id="testing-significance" class="level2">
+<h2 class="anchored" data-anchor-id="testing-significance">Testing significance</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(<span class="sc">~</span> plane_age <span class="sc">+</span> dep_delay, <span class="at">data =</span> flights_planes)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Pearson's product-moment correlation
+
+data:  plane_age and dep_delay
+t = -8.0496, df = 274794, p-value = 8.338e-16
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ -0.01909176 -0.01161574
+sample estimates:
+        cor 
+-0.01535396 </code></pre>
+</div>
+</div>
+<p>Is 0 inside the interval?</p>
+<ul>
+<li><p>0 is inside (e.g., -0.01 to +0.03): the data are compatible with no relationship at all, so the result is not significant.</p></li>
+<li><p>0 is outside: zero isn’t a plausible value, so the result is significant.</p></li>
+</ul>
+<p>The correlation between plane age and departure delay was r = -0.015 (95% CI -0.019 to -0.012, p &lt; 0.001). This is statistically significant because of the very large sample, but the effect is negligible: plane age explains about 0.02% of the variation in delays</p>
+<section id="exercise-1-change-a-column" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-1-change-a-column">Exercise 1: Change a column</h3>
+<p>You calculated average departure delay by airline. Do the same for <strong>arrival delay</strong>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>arrival_delays_by_airline <span class="ot">&lt;-</span> flights <span class="sc">|&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(carrier) <span class="sc">|&gt;</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_flights =</span> <span class="fu">n</span>(),</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_arr_delay =</span> <span class="fu">mean</span>(arr_delay, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(avg_arr_delay))</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>arrival_delays_by_airline</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 16 × 3
+   carrier n_flights avg_arr_delay
+   &lt;chr&gt;       &lt;int&gt;         &lt;dbl&gt;
+ 1 F9            685        21.9  
+ 2 FL           3260        20.1  
+ 3 EV          54173        15.8  
+ 4 YV            601        15.6  
+ 5 OO             32        11.9  
+ 6 MQ          26397        10.8  
+ 7 WN          12275         9.65 
+ 8 B6          54635         9.46 
+ 9 9E          18460         7.38 
+10 UA          58665         3.56 
+11 US          20536         2.13 
+12 VX           5162         1.76 
+13 DL          48110         1.64 
+14 AA          32729         0.364
+15 HA            342        -6.92 
+16 AS            714        -9.93 </code></pre>
+</div>
+</div>
+</section>
+<section id="exercise-2-change-the-grouping" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-2-change-the-grouping">Exercise 2: Change the grouping</h3>
+<p>Instead of airline, find the average departure delay by month or by origin airport.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>delays_by_month <span class="ot">&lt;-</span> flights <span class="sc">|&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span> (month) <span class="sc">|&gt;</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_flights =</span> <span class="fu">n</span>(),</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_dep_delay =</span> <span class="fu">mean</span>(dep_delay, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(avg_dep_delay))</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>delays_by_month</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 12 × 3
+   month n_flights avg_dep_delay
+   &lt;int&gt;     &lt;int&gt;         &lt;dbl&gt;
+ 1     7     29425         21.7 
+ 2     6     28243         20.8 
+ 3    12     28135         16.6 
+ 4     4     28330         13.9 
+ 5     3     28834         13.2 
+ 6     5     28796         13.0 
+ 7     8     29327         12.6 
+ 8     2     24951         10.8 
+ 9     1     27004         10.0 
+10     9     27574          6.72
+11    10     28889          6.24
+12    11     27268          5.44</code></pre>
+</div>
+</div>
+<p>Most departure delays happen in July, followed by June, and then December. Delays happen least frequently in November.</p>
+</section>
+<section id="delays-by-airport" class="level3">
+<h3 class="anchored" data-anchor-id="delays-by-airport">Delays by Airport</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Join tables</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>name_airports <span class="ot">&lt;-</span> flights <span class="sc">|&gt;</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    airports <span class="sc">|&gt;</span> <span class="fu">select</span>(faa, <span class="at">airport_name =</span> name),</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"origin"</span> <span class="ot">=</span> <span class="st">"faa"</span>)</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a><span class="co">#Add airport_name column and check the join</span></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>name_airports <span class="ot">&lt;-</span> name_airports <span class="sc">|&gt;</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(airport_name)</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(flights)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 336776</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(name_airports)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 336776</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(<span class="fu">is.na</span>(name_airports<span class="sc">$</span>airport_name))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Check the correlation</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>name_airports <span class="sc">|&gt;</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(airport_name) <span class="sc">|&gt;</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_flights =</span> <span class="fu">n</span>(),</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_dep_delay_min =</span> <span class="fu">mean</span>(dep_delay, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 3
+  airport_name        n_flights avg_dep_delay_min
+  &lt;chr&gt;                   &lt;int&gt;             &lt;dbl&gt;
+1 John F Kennedy Intl    111279              12.1
+2 La Guardia             104662              10.3
+3 Newark Liberty Intl    120835              15.1</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Plot the correlation</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(name_airports, <span class="fu">aes</span>(<span class="at">x =</span> airport_name, <span class="at">y =</span> dep_delay)) <span class="sc">+</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">20</span>, <span class="dv">60</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 8255 rows containing non-finite values (`stat_boxplot()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="week1_wrangling_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Test whether the correlation is statistically significant</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">aov</span>(dep_delay <span class="sc">~</span> airport_name, <span class="at">data =</span> name_airports)</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 Df    Sum Sq Mean Sq F value Pr(&gt;F)    
+airport_name      2   1280515  640258   396.9 &lt;2e-16 ***
+Residuals    328518 529886717    1613                   
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+8255 observations deleted due to missingness</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Check the effect size</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">lm</span>(dep_delay <span class="sc">~</span> airport_name, <span class="at">data =</span> name_airports))<span class="sc">$</span>r.squared</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.002410757</code></pre>
+</div>
+</div>
+<p>cmd + option + shift + m -&gt; selects every instance of a variable within the chunk</p>
+<p>There are 0 instances where we don’t know the airport name.</p>
+</section>
+<section id="reading-the-anova-table" class="level3">
+<h3 class="anchored" data-anchor-id="reading-the-anova-table">Reading the ANOVA table</h3>
+<ul>
+<li><p><strong>Df (2):</strong> degrees of freedom. Airport has 2 because there are 3 airports, and it’s always the number of groups minus 1.</p></li>
+<li><p><strong>Sum Sq:</strong> the total variation in delays, split into the part linked to airport (1,280,515) and the part left over (529,886,717).</p></li>
+<li><p><strong>F value (396.9):</strong> how large the between-airport variation is relative to the within-airport variation. Larger means the group averages differ more than you’d expect by chance.</p></li>
+<li><p><strong>Pr(&gt;F) <code>&lt;2e-16</code>:</strong> the p-value. R stops printing at about 2.2e-16, so it shows “less than” that. In a write-up, put <strong>p &lt; 0.001</strong>.</p></li>
+<li><p><strong>8255 observations deleted:</strong> flights with a missing <code>dep_delay</code>, which are cancelled flights. This is the same missing-data exclusion you wrote down for plane age.</p></li>
+</ul>
+</section>
+<section id="the-effect-size" class="level3">
+<h3 class="anchored" data-anchor-id="the-effect-size">The effect size</h3>
+<p>R² = 0.0024 means airport explains about <strong>0.24%</strong> of the variation in departure delay. You can check it from the table: 1,280,515 / (1,280,515 + 529,886,717) ≈ 0.0024. R² is just the airport row’s share of the total.</p>
+</section>
+<section id="the-parts-of-one-box" class="level3">
+<h3 class="anchored" data-anchor-id="the-parts-of-one-box">The parts of one box</h3>
+<ul>
+<li><p><strong>The thick line inside the box</strong> is the <strong>median</strong>: the middle value. Half of that airport’s flights were delayed less than this, half more. Note that it’s the median, not the mean, so it won’t match the averages you calculated.</p></li>
+<li><p><strong>The box itself</strong> spans the <strong>middle 50%</strong> of flights, from the 25th percentile (bottom edge) to the 75th percentile (top edge). A taller box means delays vary more from flight to flight. The box height is called the interquartile range (IQR).</p></li>
+<li><p><strong>The whiskers</strong> (lines sticking out above and below) extend to the most extreme values that aren’t considered outliers, roughly 1.5 box-heights beyond the box.</p></li>
+<li><p><strong>The dots</strong> beyond the whiskers are <strong>outliers</strong>: unusually large or small delays. Delay data has a huge number of these on the high side, since some flights are delayed for hours.</p></li>
+</ul>
+</section>
+<section id="what-to-look-at-when-comparing-the-three-boxes" class="level3">
+<h3 class="anchored" data-anchor-id="what-to-look-at-when-comparing-the-three-boxes">What to look at when comparing the three boxes</h3>
+<ol type="1">
+<li><p><strong>Are the median lines at similar heights?</strong> If so, a typical flight has a similar delay at each airport.</p></li>
+<li><p><strong>Are the boxes similar in height?</strong> A taller box means less predictable delays.</p></li>
+<li><p><strong>Which airport has the longer upper whisker or more dots?</strong> That’s where the worst delays cluster.</p></li>
+<li><p><strong>How much do the boxes overlap vertically?</strong> A lot of overlap means the airports are similar, which matches your R² of 0.0024. If the boxes sat clearly apart, airport would matter more.</p></li>
+</ol>
+</section>
+<section id="why-the-medians-may-look-odd" class="level3">
+<h3 class="anchored" data-anchor-id="why-the-medians-may-look-odd">Why the medians may look odd</h3>
+<p>Most flights leave close to on time, so the median is often <strong>below zero</strong> (early) or only a few minutes late, while the mean is pulled higher by the long delays. That’s why the mean and median differ, and it’s the reason Exercise 3 asked you to compare them.</p>
+</section>
+<section id="section" class="level3">
+<h3 class="anchored" data-anchor-id="section"></h3>
+</section>
+</section>
 
 </main>
 <!-- /main column -->

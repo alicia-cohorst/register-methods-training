@@ -63,3 +63,161 @@ nrow(flights_planes)
 sum(is.na(flights_planes$plane_age))
 
 ```
+
+- `mutate()` creates a new column. Here it’s 2013 (the year of the flights) minus the year the plane was built, which gives the age in years.
+
+- The first two should print the same number. If a join changes the number of rows, something went wrong.
+
+- The third counts flights where we don’t know the plane’s age, because those planes weren’t in the `planes` table. Write down that number in your document, since those flights will have to be left out of the next step.
+
+planes not in the planes table: 57912
+
+## Check the correlation
+
+```{r}
+flights_planes |>
+  summarise(correlation = cor(plane_age, dep_delay, use = "complete.obs"))
+```
+
+`cor()` gives a number between -1 and 1. Values near 0 mean almost no linear relationship. `use = "complete.obs"` tells R to ignore rows where either value is missing, which is how we skip the flights with unknown plane age or cancelled flights.
+
+0.02 × 0.02 = 0.0004, or about 0.04%
+
+There is a slight correlation (-0.02; 0.04%) between plane age and departure delays, which tells us that there is a negative correlation; newer planes experience greater delays. However, the correlation is very small and indicates almost no linear relationship.
+
+## Testing significance
+
+```{r}
+cor.test(~ plane_age + dep_delay, data = flights_planes)
+```
+
+Is 0 inside the interval?
+
+- 0 is inside (e.g., -0.01 to +0.03): the data are compatible with no relationship at all, so the result is not significant.
+
+- 0 is outside: zero isn’t a plausible value, so the result is significant.
+
+The correlation between plane age and departure delay was r = -0.015 (95% CI -0.019 to -0.012, p \< 0.001). This is statistically significant because of the very large sample, but the effect is negligible: plane age explains about 0.02% of the variation in delays
+
+### Exercise 1: Change a column
+
+You calculated average departure delay by airline. Do the same for **arrival delay**.
+
+```{r}
+arrival_delays_by_airline <- flights |>
+  group_by(carrier) |>
+  summarise(
+    n_flights = n(),
+    avg_arr_delay = mean(arr_delay, na.rm = TRUE)
+  ) |>
+  arrange(desc(avg_arr_delay))
+
+arrival_delays_by_airline
+```
+
+### Exercise 2: Change the grouping
+
+Instead of airline, find the average departure delay by month or by origin airport.
+
+```{r}
+delays_by_month <- flights |>
+  group_by (month) |>
+  summarise(
+    n_flights = n(),
+    avg_dep_delay = mean(dep_delay, na.rm = TRUE)
+  ) |>
+  arrange(desc(avg_dep_delay))
+
+delays_by_month
+```
+
+Most departure delays happen in July, followed by June, and then December. Delays happen least frequently in November.
+
+### Delays by Airport 
+
+```{r}
+
+#Join tables
+
+name_airports <- flights |>
+  left_join(
+    airports |> select(faa, airport_name = name),
+    by = c("origin" = "faa")
+  )
+
+#Add airport_name column and check the join
+name_airports <- name_airports |>
+  mutate(airport_name)
+
+nrow(flights)
+nrow(name_airports)
+sum(is.na(name_airports$airport_name))
+
+#Check the correlation
+name_airports |>
+  group_by(airport_name) |>
+  summarise(
+    n_flights = n(),
+    avg_dep_delay_min = mean(dep_delay, na.rm = TRUE)
+  )
+
+#Plot the correlation
+
+ggplot(name_airports, aes(x = airport_name, y = dep_delay)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(-20, 60))
+
+#Test whether the correlation is statistically significant
+model <- aov(dep_delay ~ airport_name, data = name_airports)
+summary(model)
+
+#Check the effect size
+summary(lm(dep_delay ~ airport_name, data = name_airports))$r.squared
+
+```
+
+cmd + option + shift + m -\> selects every instance of a variable within the chunk
+
+There are 0 instances where we don't know the airport name.
+
+### Reading the ANOVA table
+
+- **Df (2):** degrees of freedom. Airport has 2 because there are 3 airports, and it’s always the number of groups minus 1.
+
+- **Sum Sq:** the total variation in delays, split into the part linked to airport (1,280,515) and the part left over (529,886,717).
+
+- **F value (396.9):** how large the between-airport variation is relative to the within-airport variation. Larger means the group averages differ more than you’d expect by chance.
+
+- **Pr(\>F) `<2e-16`:** the p-value. R stops printing at about 2.2e-16, so it shows “less than” that. In a write-up, put **p \< 0.001**.
+
+- **8255 observations deleted:** flights with a missing `dep_delay`, which are cancelled flights. This is the same missing-data exclusion you wrote down for plane age.
+
+### The effect size
+
+R² = 0.0024 means airport explains about **0.24%** of the variation in departure delay. You can check it from the table: 1,280,515 / (1,280,515 + 529,886,717) ≈ 0.0024. R² is just the airport row’s share of the total.
+
+### The parts of one box
+
+- **The thick line inside the box** is the **median**: the middle value. Half of that airport’s flights were delayed less than this, half more. Note that it’s the median, not the mean, so it won’t match the averages you calculated.
+
+- **The box itself** spans the **middle 50%** of flights, from the 25th percentile (bottom edge) to the 75th percentile (top edge). A taller box means delays vary more from flight to flight. The box height is called the interquartile range (IQR).
+
+- **The whiskers** (lines sticking out above and below) extend to the most extreme values that aren’t considered outliers, roughly 1.5 box-heights beyond the box.
+
+- **The dots** beyond the whiskers are **outliers**: unusually large or small delays. Delay data has a huge number of these on the high side, since some flights are delayed for hours.
+
+### What to look at when comparing the three boxes
+
+1.  **Are the median lines at similar heights?** If so, a typical flight has a similar delay at each airport.
+
+2.  **Are the boxes similar in height?** A taller box means less predictable delays.
+
+3.  **Which airport has the longer upper whisker or more dots?** That’s where the worst delays cluster.
+
+4.  **How much do the boxes overlap vertically?** A lot of overlap means the airports are similar, which matches your R² of 0.0024. If the boxes sat clearly apart, airport would matter more.
+
+### Why the medians may look odd
+
+Most flights leave close to on time, so the median is often **below zero** (early) or only a few minutes late, while the mean is pulled higher by the long delays. That’s why the mean and median differ, and it’s the reason Exercise 3 asked you to compare them.
+
+### 
