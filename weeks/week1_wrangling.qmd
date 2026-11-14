@@ -27,3 +27,39 @@ delays_by_airline
 Which airlines had the worst departure delays?
 
 Airline F9 had the worst average departure delay at 20.22 minutes
+
+## Look at the planes table
+
+```{r}
+planes
+```
+
+## Join the tables 
+
+```{r}
+flights_planes <- flights |>
+  left_join(
+    planes |> select(tailnum, year_built = year),
+    by = "tailnum"
+  )
+```
+
+- `flights |> left_join(...)` means “start with flights and add columns to it”.
+
+- `planes |> select(tailnum, year_built = year)` means “from planes, keep only two columns, and rename `year` to `year_built`”. The renaming is what avoids the clash.
+
+- `by = "tailnum"` means “match the rows using the tailnum column”.
+
+- `left_join` keeps every flight, even if its plane isn’t found in `planes`. Those flights just get an `NA` (missing) in `year_built`.
+
+## Calculate plane age and check the join
+
+```{r}
+flights_planes <- flights_planes |>
+  mutate(plane_age = 2013 - year_built)
+
+nrow(flights)
+nrow(flights_planes)
+sum(is.na(flights_planes$plane_age))
+
+```
